@@ -1,25 +1,32 @@
 ﻿using Newtonsoft.Json;
-using RestSharp.Deserializers;
 using RestSharp;
 using RestSharp.Serializers;
 
 namespace RestSharpHelper
 {
-    public class NewtonsoftJsonSerializer : IDeserializer, ISerializer
+    public class NewtonsoftJsonSerializer : IRestSerializer, ISerializer, IDeserializer
     {
-        public string DateFormat { get; set; }
+        public string[] SupportedContentTypes { get; } = {
+            "application/json", "text/json", "text/x-json", "text/javascript", "*+json"
+        };
 
-        public string Namespace { get; set; }
+        public string ContentType { get; set; } = "application/json";
 
-        public string RootElement { get; set; }
+        public DataFormat DataFormat { get; } = DataFormat.Json;
 
-        public string ContentType
-        {
-            get { return "application/json"; }
-            set { }
-        }
+        public string[] AcceptedContentTypes => SupportedContentTypes;
 
-        public T Deserialize<T>(IRestResponse response)
+        public SupportsContentType SupportsContentType => s => s.Value == RestSharp.ContentType.Json;
+
+        public static NewtonsoftJsonSerializer Default => new NewtonsoftJsonSerializer();
+
+        public ISerializer Serializer => Default;
+
+        public IDeserializer Deserializer => Default;
+
+        ContentType ISerializer.ContentType { get; set; } = RestSharp.ContentType.Json;
+
+        public T Deserialize<T>(RestResponse response)
         {
             return JsonConvert.DeserializeObject<T>(response.Content);
         }
@@ -29,6 +36,9 @@ namespace RestSharpHelper
             return JsonConvert.SerializeObject(obj);
         }
 
-        public static NewtonsoftJsonSerializer Default => new NewtonsoftJsonSerializer();
+        public string Serialize(Parameter parameter)
+        {
+            return Serialize(parameter.Value);
+        }
     }
 }

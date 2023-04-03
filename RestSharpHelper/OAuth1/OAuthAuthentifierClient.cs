@@ -63,7 +63,7 @@ namespace RestSharpHelper.OAuth1
             var authorizeTokenClient = GetRequestTokenClient(AuthorizeUrl);
             var request = new RestRequest(_AuthorizeUrl);
             request.AddParameter(_Token, _TokenInformation.Token);
-            return authorizeTokenClient.BuildUri(request).ToString();
+            return authorizeTokenClient.ExecuteGetAsync(request).Result.ResponseUri.ToString();//authorizeTokenClient.BuildUri(request).ToString();
         }
 
         private async Task<OAuthCompleteInformation> Access(string verifier)
@@ -82,35 +82,25 @@ namespace RestSharpHelper.OAuth1
 
         public async Task<OAuthTokenInformation> GetTokenInformationFromRequest(IRestClient client, string relativeUrl)
         {
-            var request = new RestRequest(relativeUrl, Method.POST);
-            var response = await client.ExecuteTaskAsync(request);
+            var request = new RestRequest(relativeUrl, Method.Post);
+            var response = await client.ExecuteAsync(request);
 
             return !CheckResponse(response) ? null : GetTokenInformationFromBodyResponse(response);
         }
 
-        private OAuthTokenInformation GetTokenInformationFromBodyResponse(IRestResponse response)
+        private OAuthTokenInformation GetTokenInformationFromBodyResponse(RestResponse response)
         {
             var qs = HttpUtility.ParseQueryString(response.Content);
             return new OAuthTokenInformation(qs[_Token], qs[_TokenSecret]);
         }
 
-        private bool CheckResponse(IRestResponse response)
+        private bool CheckResponse(RestResponse response)
         {
             return ((response != null) && (response.StatusCode == HttpStatusCode.OK));
         }
 
-        private IRestClient GetRequestTokenClient(string baseUrl)
-        {
-            var client = ClientBuilder.Build(baseUrl);
-            client.Authenticator = _ConsumerInformation.GetAuthenticatorForRequestToken();
-            return client;
-        }
+        private IRestClient GetRequestTokenClient(string baseUrl) => ClientBuilder.Build(baseUrl, _ConsumerInformation.GetAuthenticatorForRequestToken());
 
-        private IRestClient GetAccessTokenClient(string baseUrl, string verifier)
-        {
-            var client = ClientBuilder.Build(baseUrl);
-            client.Authenticator = _CompleteInformation.GetAuthenticatorForAccessToken(verifier);
-            return client;
-        }
+        private IRestClient GetAccessTokenClient(string baseUrl, string verifier) => ClientBuilder.Build(baseUrl, _CompleteInformation.GetAuthenticatorForAccessToken(verifier));
     }
 }

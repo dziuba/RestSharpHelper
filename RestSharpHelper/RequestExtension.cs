@@ -6,7 +6,7 @@ namespace RestSharpHelper
 {
     public static class RequestExtension
     {
-        public static IRestRequest AddAsParameter(this IRestRequest request, object parameter, ParameterType type = ParameterType.QueryString)
+        public static RestRequest AddAsParameter(this RestRequest request, object parameter, ParameterType type = ParameterType.QueryString)
         {
             if (parameter == null)
                 return request;
